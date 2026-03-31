@@ -8,6 +8,8 @@ from typing import Any, Dict, List
 import yaml
 
 from utils.path import get_config_path, get_prompt_dir
+from utils.profile_loader import get_profile_context
+from utils.skill_registry import format_skill_catalog_for_prompt
 
 
 def _load_prompt_yaml() -> Dict[str, Any]:
@@ -74,9 +76,24 @@ def format_tool_registry_for_prompt(tools: List[Any]) -> str:
 
 
 def get_system_prompt_with_tools(tools: List[Any]) -> str:
-    """获取 system_prompt 正文，并追加当前工具注册表信息。"""
-    base = get_system_prompt()
-    section = format_tool_registry_for_prompt(tools)
-    if not section:
-        return base
-    return (base.rstrip() + "\n\n" + section).strip()
+    """获取 system_prompt，并追加 Profile Layer 与工具注册信息。"""
+    base = get_system_prompt().strip()
+    tool_section = format_tool_registry_for_prompt(tools).strip()
+    skill_catalog = format_skill_catalog_for_prompt().strip()
+
+    profile_text = ""
+    tools_injected_by_profile = False
+    try:
+        profile_ctx = get_profile_context()
+        profile_text, tools_injected_by_profile = profile_ctx.to_prompt(tool_registry_section=tool_section)
+        profile_text = profile_text.strip()
+    except Exception:
+        profile_text = ""
+        tools_injected_by_profile = False
+
+    parts = [p for p in [base, profile_text] if p]
+    if tool_section and not tools_injected_by_profile:
+        parts.append(tool_section)
+    if skill_catalog:
+        parts.append(skill_catalog)
+    return "\n\n".join(parts).strip()

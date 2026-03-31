@@ -9,22 +9,44 @@ import queue
 import threading
 from datetime import datetime
 
-from langchain.agents import create_agent
+try:
+    # LangChain 新版本接口
+    from langchain.agents import create_agent
+except ImportError:
+    # 兼容旧版本：用 create_tool_calling_agent + AgentExecutor 组合出等价能力
+    from langchain.agents import AgentExecutor, create_tool_calling_agent
+    from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+    def create_agent(*, model, tools, system_prompt):
+        prompt = ChatPromptTemplate.from_messages(
+            [
+                ("system", system_prompt),
+                MessagesPlaceholder(variable_name="messages"),
+                MessagesPlaceholder(variable_name="agent_scratchpad"),
+            ]
+        )
+        runnable_agent = create_tool_calling_agent(model, tools, prompt)
+        return AgentExecutor(agent=runnable_agent, tools=tools)
+
 from langchain_core.callbacks import BaseCallbackHandler
 from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.chat_history import BaseChatMessageHistory
 from model.factory import get_react_model
-from tools import demo_calculator
 from utils.message_utils import messages_from_session_data
 from utils.prompt_loader import get_system_prompt_with_tools
+from utils.long_term_memory import format_relevant_memories_for_prompt
+from utils.skill_registry import format_active_skills_for_prompt
+from utils.tool_registry import load_agent_tools
 from utils.task_context import set_task_id, get_task_id
 from utils.token_tracker import TokenUsageTracker
 from utils.message_utils import compress_messages
 from utils.session_manager import get_session_manager
 import warnings
 
-# 当前注册的工具列表
-AGENT_TOOLS = [demo_calculator]
+# 当前注册的工具列表（来自动态注册中心）
+AGENT_TOOLS = load_agent_tools()
+if not AGENT_TOOLS:
+    warnings.warn("未发现可用工具。请检查 config/tools.yaml 或 tools 目录下的工具实现。")
 
 # Callback 处理器：在工具执行时设置任务ID上下文
 class TaskContextCallback(BaseCallbackHandler):
@@ -116,14 +138,32 @@ def _get_session_history(task_id: str) -> BaseChatMessageHistory:
     """获取会话历史"""
     return SessionChatMessageHistory(task_id)
 
-# 实例化 system prompt、LLM、ReAct Agent
-_system_prompt = get_system_prompt_with_tools(AGENT_TOOLS)
-_llm = get_react_model()
-react_agent = create_agent(
-    model=_llm,
-    tools=AGENT_TOOLS,
-    system_prompt=_system_prompt,
-)
+# 延迟初始化 ReAct Agent，避免模块导入阶段强依赖模型配置
+_react_agent = None
+_react_agent_init_error: Exception | None = None
+
+
+def _get_react_agent():
+    """获取（并在首次调用时初始化）ReAct Agent。"""
+    global _react_agent, _react_agent_init_error
+
+    if _react_agent is not None:
+        return _react_agent
+    if _react_agent_init_error is not None:
+        raise RuntimeError(f"ReAct Agent 初始化失败: {_react_agent_init_error}") from _react_agent_init_error
+
+    try:
+        system_prompt = get_system_prompt_with_tools(AGENT_TOOLS)
+        llm = get_react_model()
+        _react_agent = create_agent(
+            model=llm,
+            tools=AGENT_TOOLS,
+            system_prompt=system_prompt,
+        )
+        return _react_agent
+    except Exception as exc:
+        _react_agent_init_error = exc
+        raise RuntimeError(f"ReAct Agent 初始化失败: {exc}") from exc
 
 # 创建带消息历史的 Agent
 # 注意：此函数目前未使用，保留作为预留功能，用于未来可能需要直接使用带历史管理的 Agent 的场景
@@ -135,7 +175,7 @@ def _create_agent_with_history():
     当前代码直接使用 react_agent 和 SessionChatMessageHistory 来实现消息历史管理。
     """
     return RunnableWithMessageHistory(
-        react_agent,
+        _get_react_agent(),
         _get_session_history,
         input_messages_key="messages",
         history_messages_key="messages",
@@ -160,11 +200,19 @@ def stream(
         max_context_tokens: 最大上下文 token 数，超过此值将压缩旧消息
         
     """
+    react_agent = _get_react_agent()
+
     # 设置任务ID（使用辅助函数，同时设置 ContextVar 和全局存储）
     set_task_id(task_id)
     
     # 构建消息列表
     messages = []
+    ltm_context = format_relevant_memories_for_prompt(user_input, top_k=3)
+    if ltm_context:
+        messages.append(SystemMessage(content=ltm_context))
+    skill_context = format_active_skills_for_prompt(user_input)
+    if skill_context:
+        messages.append(SystemMessage(content=skill_context))
     if previous_messages:
         messages.extend(previous_messages)
     messages.append(HumanMessage(content=user_input))

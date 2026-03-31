@@ -1,0 +1,28 @@
+# 工具注册中心配置
+#
+# 目标：
+# - 自动发现 tools/ 下的 LangChain 工具（默认开启）
+# - 通过配置启停工具，避免修改核心文件
+#
+# 说明：
+# - enabled_tools 为空时，默认启用所有发现到的工具
+# - disabled_tools 优先生效（即使在 enabled_tools 中出现也会被禁用）
+
+auto_discover: true
+
+# 自动扫描的包列表（通常无需修改）
+search_packages:
+  - tools
+
+# 强制额外加载的模块（可选）
+include_modules: []
+
+# 排除模块（可按前缀匹配）
+exclude_modules:
+  - tools.__init__
+
+# 仅启用指定工具（空列表表示不限）
+enabled_tools: []
+
+# 显式禁用的工具
+disabled_tools: []

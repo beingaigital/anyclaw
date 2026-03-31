@@ -29,6 +29,7 @@ from cli.display import (
 )
 from cli.session_ui import show_session_selector
 from utils.message_utils import messages_from_session_data
+from utils.long_term_memory import append_turn_memory
 
 
 def run_session_query(
@@ -59,6 +60,7 @@ def run_session_query(
     session_manager.add_message(task_id, "user", query)
     
     final_state = None
+    latest_assistant_text = ""
     processed_message_ids = set()
     pending_tool_calls: List[Dict[str, Any]] = []
     
@@ -249,6 +251,7 @@ def run_session_query(
                             if not is_tool_result_json:
                                 # 保存最终消息
                                 session_manager.add_message(task_id, "assistant", content)
+                                latest_assistant_text = content
                                 # 每次回复完成后打印 token 消耗（本轮 delta）
                                 _print_reply_token_delta("本次回复")
                             current_content = ""
@@ -372,6 +375,7 @@ def run_session_query(
                                             # 保存流式内容（如果有）
                                             if current_content:
                                                 session_manager.add_message(task_id, "assistant", current_content)
+                                                latest_assistant_text = current_content
                                             is_streaming = False
                                             current_content = ""
                                             current_msg_id = None
@@ -576,6 +580,7 @@ def run_session_query(
             
             if current_content:
                 session_manager.add_message(task_id, "assistant", current_content, tool_calls=tool_calls_data)
+                latest_assistant_text = current_content
                 # 每次回复完成后打印 token 消耗（本轮 delta）
                 _print_reply_token_delta("本次回复")
             
@@ -596,6 +601,7 @@ def run_session_query(
             # 保存已生成的内容
             if current_content:
                 session_manager.add_message(task_id, "assistant", current_content)
+                latest_assistant_text = current_content
         print_status("用户中断了执行", "warning")
         for tc in pending_tool_calls:
             tool_call_id = tc.get("id", "")
@@ -619,6 +625,7 @@ def run_session_query(
             # 保存已生成的内容
             if current_content:
                 session_manager.add_message(task_id, "assistant", current_content)
+                latest_assistant_text = current_content
         print_status(f"执行出错: {str(e)}", "error")
         
         for tc in pending_tool_calls:
@@ -653,6 +660,10 @@ def run_session_query(
     if not show_spinner:
         print_separator()
         print_status("处理完成", "success")
+
+    # 写入长期记忆（轻量 LTM）
+    if latest_assistant_text.strip():
+        append_turn_memory(task_id=task_id, query=query, response=latest_assistant_text)
     
     return final_state or {}
 

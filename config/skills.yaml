@@ -1,0 +1,49 @@
+# Skills Layer 配置
+#
+# 目标：
+# - 支持 skills/*.md 作为可插拔能力单元
+# - 支持按场景（query关键词）自动激活技能
+# - 支持手动常驻/禁用技能
+
+enabled: true
+auto_activate: true
+discover_files: true
+
+# 每个技能注入 prompt 时的最大字符数
+max_chars_per_skill: 1800
+
+# 每轮自动注入的最大技能数（不含 always_on）
+max_active_skills: 3
+
+# 总注入字符预算（防止 context 膨胀）
+max_total_chars: 4200
+
+manual_activation:
+  always_on: []
+  disabled: []
+
+# 显式技能配置（可选）
+skills:
+  planning:
+    file: skills/planning.md
+    enabled: true
+    priority: 90
+    keywords: ["规划", "计划", "roadmap", "方案", "拆解", "里程碑", "架构"]
+
+  coding:
+    file: skills/coding.md
+    enabled: true
+    priority: 95
+    keywords: ["代码", "重构", "bug", "修复", "实现", "python", "api", "测试"]
+
+  research:
+    file: skills/research.md
+    enabled: true
+    priority: 80
+    keywords: ["调研", "对比", "分析", "研究", "评估", "方案比较", "benchmark"]
+
+  data_analysis:
+    file: skills/data-analysis.md
+    enabled: true
+    priority: 85
+    keywords: ["数据", "指标", "统计", "可视化", "sql", "csv", "趋势", "报告"]

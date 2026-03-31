@@ -200,6 +200,12 @@ python -m cli.main
 - `/memory` - 查看并恢复之前的会话（最多显示5个）
 - `/models` - 查看所有模型配置
 - `/tools` - 查看所有可用工具
+- `/tools reload` - 重新扫描工具并刷新工具列表
+- `/profile` - 查看 profile layer（IDENTITY/USER/SOUL/AGENT/MEMORY/TOOLS）加载状态
+- `/profile reload` - 重新加载 profile 文件
+- `/skills` - 查看 skills layer 状态
+- `/skills reload` - 重新加载 skills 配置
+- `/skills match <query>` - 预览 query 的技能自动激活结果
 - `/clear` - 清除 memory 和 sandbox（需确认）
 - `/exit` - 退出程序
 
@@ -305,40 +311,28 @@ python -m cli.main
 -工具内部需要调用 LLM 来分析数据或生成内容，可以根据场景选择合适的模型使用：如使用项目中的（text_generation、element_extraction、code_generation）
 ```
 
-**第二步：导出工具**
+**第二步：配置启停（可选）**
 
-创建好工具文件后，需要在 `tools/__init__.py` 中导出它
+AnyClaw 现在支持自动发现工具，不需要再改 `agent/reactagent.py` 或 `tools/__init__.py`。
 
-```
-打开 tools/__init__.py，把新的工具导入并加到 __all__ 列表里
-```
+你只需要在 `config/tools.yaml` 控制启用状态：
 
-代码示例：
-
-```python
-from tools.my_tool import my_tool
-
-__all__ = ["my_tool"]
-```
-
-**第三步：注册到 Agent**
-
-最后一步，把工具注册到 Agent 的工具列表中。这样 Agent 才能知道有这个工具可以使用。
-
-```
-打开 agent/reactagent.py，找到 AGENT_TOOLS 这一行，把新的工具导入并加到列表里
+```yaml
+auto_discover: true
+search_packages:
+  - tools
+enabled_tools: []
+disabled_tools:
+  - my_tool
 ```
 
-代码示例：
+说明：
 
-```python
-from tools import demo_calculator, my_tool
+- `enabled_tools` 为空：默认启用全部已发现工具
+- `enabled_tools` 非空：仅启用清单中的工具
+- `disabled_tools`：显式禁用工具（优先级更高）
 
-# 当前注册的工具列表
-AGENT_TOOLS = [demo_calculator, my_tool]
-```
-
-**第四步：测试工具**
+**第三步：测试工具**
 
 工具添加完成后，写一个测试文件，直接运行查看效果
 
@@ -346,6 +340,14 @@ AGENT_TOOLS = [demo_calculator, my_tool]
 在scripts中新增一个工具测试文件，用于测试新的工具（如my_tool）
 格式按照run_demo示例一致
 ```
+
+你也可以在 CLI 中直接运行：
+
+```bash
+/tools reload
+```
+
+查看新工具是否被发现并启用。
 
 ---
 
@@ -373,12 +375,17 @@ anyclaw/
 │   ├── display.py     # 显示工具（Rich UI）
 │   ├── session_ui.py  # 会话管理 UI
 │   ├── tools_ui.py    # 工具列表 UI
+│   ├── profile_ui.py  # Profile Layer 状态 UI
+│   ├── skills_ui.py   # Skills Layer 状态 UI
 │   ├── models_ui.py   # 模型列表 UI
 │   └── clear_utils.py # 清除工具
 ├── config/             # 配置文件
 │   ├── __init__.py
 │   ├── model.yaml     # 模型配置
-│   └── prompt.yaml    # Prompt 配置
+│   ├── prompt.yaml    # Prompt 配置
+│   ├── tools.yaml     # 工具自动发现与启停配置
+│   ├── profile.yaml   # Profile Layer 配置
+│   └── skills.yaml    # Skills Layer 配置
 ├── docs/               # 文档和图片
 │   ├── logo图/        # Logo 图片
 │   └── 效果图/        # 功能演示图
@@ -390,6 +397,11 @@ anyclaw/
 ├── prompt/             # Prompt 模板
 │   └── system_prompt.txt
 ├── sandbox/            # 任务运行目录
+├── skills/             # 技能文件（Markdown）
+│   ├── planning.md
+│   ├── coding.md
+│   ├── research.md
+│   └── data-analysis.md
 ├── tools/              # 工具定义
 │   ├── __init__.py
 │   └── demo_calculator.py  # 示例计算工具
@@ -401,12 +413,22 @@ anyclaw/
 │   ├── message_utils.py     # 消息工具（压缩、转换等）
 │   ├── path.py              # 路径工具
 │   ├── prompt_loader.py     # Prompt 加载
-│   └── task_context.py      # 任务上下文管理
+│   ├── task_context.py      # 任务上下文管理
+│   ├── tool_registry.py     # 动态工具注册中心
+│   ├── profile_loader.py    # Profile Layer 加载器
+│   ├── long_term_memory.py  # 轻量长期记忆（LTM）
+│   └── skill_registry.py    # 技能注册与自动激活
 ├── scripts/            # 脚本文件
 │   └── run_demo_calculator.py  # 工具测试脚本
 ├── pyproject.toml      # 项目配置
 ├── requirements.txt    # 依赖列表
 ├── LICENSE.txt         # 许可证
+├── IDENTITY.md         # Agent 身份设定
+├── USER.md             # 用户偏好与画像
+├── SOUL.md             # 系统目标与约束
+├── AGENT.md            # 决策策略
+├── MEMORY.md           # 记忆策略（STM/LTM）
+├── TOOLS.md            # 工具策略与占位符
 └── README.md           # 项目说明
 ```
 

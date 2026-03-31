@@ -5,7 +5,10 @@ from __future__ import annotations
 import yaml
 from typing import Any, Callable, Dict, Optional
 from langchain_openai import ChatOpenAI
-from langchain_google_genai import ChatGoogleGenerativeAI
+try:
+    from langchain_google_genai import ChatGoogleGenerativeAI
+except Exception:  # pragma: no cover
+    ChatGoogleGenerativeAI = None
 
 from utils.env_loader import get_env_config
 from utils.path import get_config_path
