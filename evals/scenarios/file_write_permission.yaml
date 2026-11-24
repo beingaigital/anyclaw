@@ -1,0 +1,21 @@
+name: file_write_permission
+description: ask 级写文件：interrupt → 允许 → 沙箱内落盘 + 审计
+input: "把 hello eval 写入 note.txt"
+tools: [write_file]
+policy:
+  default_tier: ask
+  tools:
+    write_file: ask
+turns:
+  - tool_call:
+      name: write_file
+      args: { path: note.txt, content: hello eval }
+      id: call_1
+  - text: "文件已写入沙箱"
+auto_decision: { action: allow }
+checks:
+  events_include: [permission_request, permission_resolved, tool_result, run_finished]
+  final_status: completed
+  file_exists: note.txt
+  audit_action: allow
+judge_rubric: "是否确认文件写入成功且路径在任务沙箱内？"

@@ -1,0 +1,18 @@
+name: calculator
+description: 计算工具端到端：调用 demo_calculator 并引用结果
+input: "10 加 5 等于多少？"
+tools: [demo_calculator]
+policy:
+  default_tier: always
+turns:
+  - tool_call:
+      name: demo_calculator
+      args: { value1: 10, value2: 5, operation: add }
+      id: call_1
+  - text: "10 + 5 = 15（来自计算工具结果）"
+checks:
+  events_include: [run_started, tool_call_started, tool_result, message_complete, run_finished]
+  final_status: completed
+  tool_result_contains: "15"
+  final_text_contains: "15"
+judge_rubric: "回答是否给出正确结果 15，且依据来自工具而非编造？"

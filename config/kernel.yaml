@@ -1,0 +1,4 @@
+# 内核运行参数
+max_context_tokens: 20000     # prompt token 估算超过此值触发历史压缩
+keep_recent_messages: 10      # 压缩时保留的最近消息数（tool 组不拆）
+recursion_limit: 50           # 单次 run 的图节点步数上限

@@ -1,0 +1,4 @@
+# Hook 注册中心：auto_discover 自动发现 hooks/*.py 的 pre_tool_use / post_tool_use
+# hooks 列表也可显式指定 callable（dotted path），如 hooks.audit_hooks.log_pre
+auto_discover: true
+hooks: []

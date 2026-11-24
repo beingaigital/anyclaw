@@ -95,3 +95,12 @@ Desktop.ini
 *.bak
 *.swp
 *~
+
+# Web 前端
+web/node_modules/
+web/dist/
+
+# Eval 运行报告
+evals/report.md
+# TS 构建缓存
+web/tsconfig.tsbuildinfo

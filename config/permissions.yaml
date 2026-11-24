@@ -1,0 +1,30 @@
+# Harness 权限策略：always（自动放行）/ ask（需用户确认）/ never（直接拦截）
+# 评估顺序：参数规则 → 会话 allowlist → 工具级 → MCP server 级 → 默认
+default_tier: ask
+
+tools:
+  demo_calculator: always
+  read_file: always
+  list_dir: always
+  glob_files: always
+  grep: always
+  write_file: ask
+  edit_file: ask
+  run_shell: ask
+
+# 参数模式规则：对指定参数（arg）或整个 args JSON 做正则匹配，命中即生效
+rules:
+  - tool: run_shell
+    pattern: 'rm\s+-rf|sudo\s|mkfs|shutdown|reboot|:\(\)\{'
+    action: never
+    reason: 危险命令
+
+# MCP 工具默认 ask；可按 server 覆盖（工具名前缀 = server 名）
+mcp:
+  default_tier: ask
+  servers: {}
+
+# 路径护栏额外根目录（默认：写仅限 sandbox/{task_id}，读限项目根）
+path_scope:
+  write_roots: []
+  read_roots: []

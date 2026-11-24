@@ -67,7 +67,7 @@ class AgentProfileContext:
 
 
 _profile_cache: Optional[AgentProfileContext] = None
-_profile_cache_key: Optional[tuple[Optional[float]]] = None
+_profile_cache_key: Optional[tuple] = None
 
 
 def _load_profile_yaml(config_path: Path) -> Dict:
@@ -81,13 +81,41 @@ def _load_profile_yaml(config_path: Path) -> Dict:
         return {}
 
 
-def _build_cache_key(config_path: Path) -> tuple[Optional[float]]:
-    if not config_path.exists():
-        return (None,)
+def _section_files_map(raw: Dict) -> Dict[str, str]:
+    """合并默认 section 文件映射与 profile.yaml 的 files 覆盖。"""
+    files_map = dict(DEFAULT_SECTION_FILES)
+    files_cfg = raw.get("files") or {}
+    if isinstance(files_cfg, dict):
+        for key, value in files_cfg.items():
+            k = str(key).strip().lower()
+            if not k:
+                continue
+            v = str(value).strip()
+            if v:
+                files_map[k] = v
+    return files_map
+
+
+def _build_cache_key(config_path: Path) -> tuple:
+    """缓存 key = profile.yaml mtime + 每个 section 文件的 mtime。
+
+    修复：此前仅 keyed on yaml，编辑 IDENTITY.md 等不会使缓存失效。
+    """
     try:
-        return (config_path.stat().st_mtime,)
+        yaml_mtime = config_path.stat().st_mtime if config_path.exists() else None
     except Exception:
-        return (None,)
+        yaml_mtime = None
+
+    raw = _load_profile_yaml(config_path)
+    root = get_project_root()
+    file_mtimes: List[Optional[float]] = []
+    for rel in sorted(set(_section_files_map(raw).values())):
+        path = (root / rel).resolve()
+        try:
+            file_mtimes.append(path.stat().st_mtime if path.exists() else None)
+        except Exception:
+            file_mtimes.append(None)
+    return (yaml_mtime, tuple(file_mtimes))
 
 
 def _clamp_text(text: str, max_chars: int) -> tuple[str, bool]:
@@ -124,16 +152,7 @@ def get_profile_context(force_reload: bool = False) -> AgentProfileContext:
     if not section_order:
         section_order = list(DEFAULT_ORDER)
 
-    files_map = dict(DEFAULT_SECTION_FILES)
-    files_cfg = raw.get("files") or {}
-    if isinstance(files_cfg, dict):
-        for key, value in files_cfg.items():
-            k = str(key).strip().lower()
-            if not k:
-                continue
-            v = str(value).strip()
-            if v:
-                files_map[k] = v
+    files_map = _section_files_map(raw)
 
     root = get_project_root()
     sections: Dict[str, ProfileSection] = {}

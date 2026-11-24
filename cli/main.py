@@ -122,7 +122,20 @@ def interactive() -> None:
 
 
 def main() -> None:
-    """主函数：启动交互式模式。"""
+    """主入口：anyclaw（交互式 CLI）/ anyclaw web [--port N]（本地 Web 控制台）。"""
+    args = sys.argv[1:]
+    if args[:1] == ["web"]:
+        port = 8000
+        if "--port" in args:
+            try:
+                port = int(args[args.index("--port") + 1])
+            except (ValueError, IndexError):
+                console.print("[red]--port 需要一个整数参数[/red]")
+                sys.exit(1)
+        from server.run import run_web
+
+        run_web(port=port)
+        return
     interactive()
 
 

@@ -1,0 +1,21 @@
+# MCP 工具接入（需安装 [mcp] extra：pip install -e ".[mcp]"）
+# MCP 工具与本地工具走同一权限/harness 管控；工具名前缀 = server 名（tool_name_prefix）
+enabled: false
+tool_name_prefix: true
+connect_timeout_seconds: 15
+
+servers: {}
+# 示例：
+# servers:
+#   math:
+#     transport: stdio
+#     command: python
+#     args: ["./mcp_servers/math_server.py"]
+#     env: {}
+#   weather:
+#     transport: streamable_http   # 也接受 http / streamable-http 别名
+#     url: http://localhost:8000/mcp
+#     headers: {}
+#   legacy:
+#     transport: sse
+#     url: http://localhost:8080/sse

@@ -4,13 +4,14 @@
 
 # AnyClaw Agent框架
 
-**基于 LangChain 的 CLI Agent 框架，vibecoding 快速搭建属于自己的 Cli Agent**
+**LangGraph headless 内核 + Harness 护栏 + CLI/Web 双端的 Agent 开发底座**
 
 [![Python](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![LangChain](https://img.shields.io/badge/LangChain-1.0+-green.svg)](https://www.langchain.com/)
-[![Rich](https://img.shields.io/badge/Rich-13.7.0+-orange.svg)](https://github.com/Textualize/rich)
-[![Typer](https://img.shields.io/badge/Typer-0.9.0+-blue.svg)](https://typer.tiangolo.com/)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/yourusername/anyclaw)
+[![LangGraph](https://img.shields.io/badge/LangGraph-1.2+-green.svg)](https://github.com/langchain-ai/langgraph)
+[![LangChain](https://img.shields.io/badge/LangChain-1.5+-green.svg)](https://www.langchain.com/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.124+-teal.svg)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18-61dafb.svg)](https://react.dev/)
+[![Version](https://img.shields.io/badge/version-0.2.0-blue)](https://github.com/wz289494/anyclaw)
 
 </div>
 
@@ -18,62 +19,39 @@
 
 ## 📖 项目介绍
 
-**AnyClaw** 是一个功能强大的 CLI Agent 框架，基于 LangChain 构建，采用 ReAct（Reasoning + Acting）模式，让你能够快速搭建属于自己的 CLI Agent。
+**AnyClaw** 是一个 Agent 开发底座框架：一个 headless 内核、一套统一事件流、两个前端（CLI 终端 + Web 控制台）。
+vibe coding 专属工具，即可改造搭建为自己的通用/垂类 Agent。
 
-### 1. 核心特性
+### 核心特性
 
-- **流式响应**：支持 token 级别的实时流式输出，提供流畅的交互体验
-- **ReAct Agent**：基于 ReAct 模式的智能推理与执行框架
-- **多模型支持**：支持 OpenAI、Gemini、Qwen、DeepSeek、Kimi 等多种 LLM 提供商
-- **工具系统**：灵活的工具扩展机制，轻松添加自定义工具
-- **会话管理**：完整的会话持久化与恢复功能，支持多会话切换
-- **Token 追踪**：实时追踪每次调用的 token 消耗，支持按步骤统计
-- **消息压缩**：自动压缩历史消息，节省 token 成本
-- **任务隔离**：每个会话拥有独立的 sandbox 目录，文件互不干扰
-- **美观 CLI**：基于 Rich 的美化命令行界面，支持 Markdown 渲染
-- **命令系统**：丰富的命令支持（`/new`, `/memory`, `/models`, `/tools`, `/clear`, `/exit`）
+- **LangGraph 显式图内核**：`prepare_context → agent → permission_gate → tools` 循环，checkpoint 持久化，进程重启可恢复会话
+- **Harness 护栏**：Always/Ask/Never 三级权限 + 参数模式规则 + pre/post hooks + JSONL 审计——工具级强制，不是 prompt 级请求
+- **CLI/Web 双端**：`anyclaw` 终端交互，`anyclaw web` 浏览器控制台，共用同一内核与事件 schema，会话互通
+- **人工确认（HITL）**：ask 级工具触发 `interrupt()` 挂起，CLI Confirm / Web 弹窗确认后 `resume` 继续
+- **MCP 接入**：config/mcp.yaml 声明外部 MCP server，工具并入同一权限管控；server 挂掉不影响启动
+- **多模型支持**：OpenAI、Gemini、Qwen、DeepSeek、Kimi（OpenAI 兼容接口）
+- **记忆体系**：STM（checkpoint + JSON 投影）/ LTM（相关度检索）/ Profile 层 / Skills 自动激活 / 历史压缩
+- **任务隔离**：每会话独立 sandbox 目录；文件工具写操作默认仅限沙箱
+- **可验证**：pytest 内核测试（fake model，无需 API key）+ eval 场景 + 第二 AI 评审
 
-### 2. 核心定位
+### 架构
 
-核心设计理念是：**只需 vibe coding专属的工具，即可改造搭建为自己的通用/垂类Agent**。
-
-- 修改图标与欢迎语 → 个性化你的 Agent
-- 修改 system prompt → 定制 Agent 的行为
-- 增加tools工具 → 扩展 Agent 能力
-
-所有配置都通过简单的 YAML 文件和代码修改即可完成，无需深入框架底层。
-
----
-
-## 🎬 功能演示
-
-### 1. 主页界面
-*-- 美观的主界面，展示项目 Logo 和所有可用命令，支持快速开始新会话或恢复历史会话*
-![主页](docs/效果图/主页图.png)
-
-### 2. 新建会话
-*-- 使用 `/new` 命令创建新会话，每个会话拥有独立的 task_id 和沙箱目录，实现任务隔离*
-![新建会话](docs/效果图/新建会话.png)
-
-### 3. 工具调用
-*-- Agent 智能调用工具执行任务，实时显示工具调用过程和结果，支持流式输出和 Token 追踪*
-![工具调用](docs/效果图/工具调用.png)
-
-### 4. 会话恢复
-*-- 使用 `/memory` 命令查看并恢复历史会话，支持多会话管理和无缝切换，保留完整的对话历史*
-![恢复记忆](docs/效果图/恢复记忆.png)
-
-### 5. 工具列表
-*-- 使用 `/tools` 命令查看所有已注册的工具，了解每个工具的功能描述和使用方式*
-![工具列表](docs/效果图/工具列表.png)
-
-### 6. 模型列表
-*-- 使用 `/models` 命令查看所有配置的模型信息，包括不同场景下的模型配置（main、text_generation 等）*
-![模型列表](docs/效果图/模型列表.png)
-
-### 7. 清除记忆
-*-- 使用 `/clear` 命令清除所有会话记忆和沙箱文件，需要确认操作，确保数据安全*
-![清楚记忆](docs/效果图/清楚记忆.png)
+```
+                 ┌────────────────────────────────────────────────────────┐
+                 │                    core/ (headless)                    │
+  cli/ ──────────┤  AgentKernel.astream / resume                          │
+  (Rich 渲染器)   │    └─ LangGraph StateGraph + AsyncSqliteSaver          │
+                 │         prepare_context → agent → route                │
+  server/ ───────┤              ↑              ├─ 无 tool_calls → END     │
+  (FastAPI+SSE)  │              │              └─ permission_gate         │
+       │         │              │                   ├─ never → 拦截       │
+       ▼         │              │                   ├─ ask → interrupt()  │
+  web/ (React)   │              └── tools ←─────────┴─ always → 放行      │
+                 │  harness: permissions / hooks / audit                  │
+                 │  checkpoint = 真相源 → STM JSON 投影（单写者）           │
+                 └────────────────────────────────────────────────────────┘
+   tools/ (@tool 自动发现) + MCP tools (langchain-mcp-adapters)
+```
 
 ---
 
@@ -82,354 +60,248 @@
 ### 1. 环境要求
 
 - Python 3.10+
-- pip 或 conda
+- Node.js 18+（仅 Web 前端开发/构建需要）
 
-### 2. 安装步骤
+### 2. 安装
 
-（1） **克隆项目**
 ```bash
 git clone https://github.com/wz289494/anyclaw.git
 cd anyclaw
+
+# 项目虚拟环境（隔离依赖，不污染全局 Python）
+python3 -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+
+# 安装（按需选择 extras）
+pip install -e ".[dev,web,mcp,gemini]"
+# 最小 CLI：pip install -e .
 ```
 
-（2） **创建虚拟环境（推荐）**
+> 国内网络可加镜像：`pip install -i https://pypi.tuna.tsinghua.edu.cn/simple -e ".[dev,web,mcp,gemini]"`
+
+### 3. 配置 API Key
+
 ```bash
-python -m venv venv
-
-# Windows
-venv\Scripts\activate
-
-# Linux/Mac
-source venv/bin/activate
+cp .env.example .env
+# 编辑 .env，填入你的 API Key（变量名约定 *_APIKEY）
 ```
 
-（3） **安装依赖**
-```bash
-pip install -r requirements.txt
-```
+### 4. 配置模型
 
-（4） **配置环境变量**
-
-创建 `.env` 文件，配置你的 API Key：
-
-```env
-# OpenAI
-OPENAI_APIKEY=your_openai_api_key
-
-# DeepSeek
-DEEPSEEK_APIKEY=your_deepseek_api_key
-
-# Qwen / DashScope
-QWEN_APIKEY=your_qwen_api_key
-
-# Gemini
-GEMINI_APIKEY=your_gemini_api_key
-
-# Kimi
-KIMI_APIKEY=your_kimi_api_key
-```
-
-（5） **配置模型**
-
-编辑 `config/model.yaml`，设置你使用的模型。配置文件支持多个场景，每个场景可以配置不同的模型：
+编辑 `config/model.yaml`（按场景配置不同模型）：
 
 ```yaml
-# 主流程模型：作为 ReAct Agent 的底座
-main:
-  provider: deepseek  # 或 openai, gemini, qwen, kimi
+main:                  # ReAct Agent 底座
+  provider: deepseek   # openai / gemini / qwen / deepseek / kimi
   model: deepseek-chat
   api_key_env: DEEPSEEK_APIKEY
 
-# 文本生成模型：用于文本生成任务
-text_generation:
+text_generation:       # 文本生成 / 历史压缩摘要 / eval 评审
   provider: qwen
   model: qwen-plus
   api_key_env: QWEN_APIKEY
 
-# 元素提取模型：用于从文本中提取结构化信息
 element_extraction:
   provider: qwen
   model: qwen-plus
   api_key_env: QWEN_APIKEY
 
-# 代码生成模型：用于代码生成任务
 code_generation:
   provider: deepseek
   model: deepseek-chat
   api_key_env: DEEPSEEK_APIKEY
 ```
 
-**配置场景说明：**
-
-- **main**：主流程模型，作为 ReAct Agent 的核心底座，负责推理和工具调用决策
-- **text_generation**：文本生成模型，专门用于文本生成任务，如文章写作、内容创作等
-- **element_extraction**：元素提取模型，用于从文本中提取结构化信息，如实体识别、信息抽取等
-- **code_generation**：代码生成模型，专门用于代码生成任务，如代码补全、代码生成等
-
-**支持的模型提供商：**
-
-- **OpenAI**：OpenAI 官方 API，支持 GPT-4、GPT-3.5 等模型，稳定可靠，适合生产环境
-- **Gemini**：Google 的 Gemini 系列模型，支持 gemini-pro、gemini-flash 等，性能强劲，多模态能力强
-- **Qwen**：阿里云通义千问模型，支持 qwen-max、qwen-plus、qwen-turbo、qwen-coder 等，国内访问速度快，中文理解能力强
-- **Kimi**：Moonshot AI 的 Kimi 模型，支持长上下文（200K tokens），适合处理长文本任务和复杂文档分析
-
-（6） **安装项目**
-
-安装项目到虚拟环境中（以开发模式安装，便于修改代码）：
+### 5. 运行
 
 ```bash
-pip install -e .
-```
-
-（7） **运行项目**
-```bash
-# 方式1：使用命令行入口（需要先执行 pip install -e .）
+# CLI 终端
 anyclaw
 
-# 方式2：直接运行（无需安装）
-python -m cli.main
+# Web 控制台（浏览器打开 http://127.0.0.1:8000）
+anyclaw web --port 8000
+```
+
+Web 前端开发模式（热更新）：
+
+```bash
+cd web && npm install && npm run dev   # http://localhost:5173，代理 /api → 8000
+# 生产构建：npm run build → web/dist，由 FastAPI 单端口服务
 ```
 
 ---
 
-## 💡 使用技巧
+## 💡 使用
 
-### 1. 基本命令
+### CLI 命令
 
-- `/new` - 开启新的会话
-- `/memory` - 查看并恢复之前的会话（最多显示5个）
-- `/models` - 查看所有模型配置
-- `/tools` - 查看所有可用工具
-- `/tools reload` - 重新扫描工具并刷新工具列表
-- `/profile` - 查看 profile layer（IDENTITY/USER/SOUL/AGENT/MEMORY/TOOLS）加载状态
-- `/profile reload` - 重新加载 profile 文件
-- `/skills` - 查看 skills layer 状态
-- `/skills reload` - 重新加载 skills 配置
-- `/skills match <query>` - 预览 query 的技能自动激活结果
-- `/clear` - 清除 memory 和 sandbox（需确认）
-- `/exit` - 退出程序
+| 命令 | 说明 |
+|------|------|
+| `/new` | 新建会话（独立 task_id + sandbox） |
+| `/memory` | 查看并恢复历史会话（checkpoint 恢复，跨进程重启） |
+| `/models` `/tools` `/profile` `/skills` | 查看各层状态（支持 `reload`） |
+| `/skills match <query>` | 预览技能自动激活 |
+| `/clear` | 清除 STM/checkpoint/审计/sandbox（需确认） |
+| `/exit` | 退出会话 / 程序 |
 
-### 2. 会话管理
+### Web 控制台
 
-- 每个会话都有唯一的 `task_id`，用于隔离数据和文件
-- 会话数据保存在 `memory/STM/` 目录
-- 任务文件保存在 `sandbox/{task_id}/` 目录
-- 使用 `/memory` 命令可以快速恢复之前的会话
+- 会话侧栏：新建 / 切换 / 删除，与 CLI 会话互通
+- 流式对话：token 级渲染 + Markdown
+- 工具调用卡片：参数 / 结果 / 状态 / 耗时
+- **权限弹窗**：ask 级工具挂起等待确认（允许 / 拒绝 / 本会话始终允许）；刷新页面自动恢复 pending 确认
+- 状态面板：工具（含 MCP server 状态）/ 模型 / Profile / Skills，支持热重载
+- Token 用量实时显示
 
-### 3. Token 追踪
+---
 
-- 系统会自动追踪每次调用的 token 消耗
-- 支持按步骤统计（agent_processing, tool_xxx 等）
-- Token 使用情况会实时显示在界面上
-- 历史记录保存在会话数据中
+## 🛡️ Harness 配置
 
-### 4. 消息压缩
+### 权限策略 `config/permissions.yaml`
 
-- 当上下文 token 数超过限制（默认 20000）时，会自动压缩历史消息
-- 压缩后的消息会生成摘要，保留关键信息
-- 压缩信息会在界面上提示
+```yaml
+default_tier: ask          # always（放行）/ ask（确认）/ never（拦截）
+
+tools:                     # 工具级（支持 glob，如 weather_*）
+  demo_calculator: always
+  read_file: always
+  write_file: ask
+  run_shell: ask
+
+rules:                     # 参数模式规则（命中即生效，优先于工具级）
+  - tool: run_shell
+    pattern: 'rm\s+-rf|sudo\s|mkfs|shutdown|reboot'
+    action: never
+    reason: 危险命令
+
+mcp:
+  default_tier: ask        # MCP 工具默认 ask
+  servers: {}              # 按 server 覆盖（工具名前缀 = server 名）
+
+path_scope:                # 路径护栏额外根（默认写仅限 sandbox/{task_id}）
+  write_roots: []
+  read_roots: []
+```
+
+评估顺序：参数规则 → 会话 allowlist → 工具级 → MCP server 级 → 默认。
+"本会话始终允许"仅会话级生效（checkpoint 持久化），不回写配置文件。
+
+### Hooks `config/hooks.yaml`
+
+```yaml
+auto_discover: true        # 自动发现 hooks/*.py 的 pre_tool_use / post_tool_use
+hooks: []                  # 或显式列出 callable（dotted path）
+```
+
+pre-hook 可 block/修改参数（异常 fail-closed）；post-hook 可修改结果。
+
+### 审计
+
+每次工具决策与结果摘要写入 `memory/audit/{日期}.jsonl`（决策 / 来源 / 耗时 / 结果摘要）。
+
+### MCP `config/mcp.yaml`
+
+```yaml
+enabled: true
+tool_name_prefix: true     # 工具名加 server 前缀，避免重名
+servers:
+  math:
+    transport: stdio
+    command: python
+    args: ["./mcp_servers/math_server.py"]
+  weather:
+    transport: streamable_http
+    url: http://localhost:8000/mcp
+```
+
+MCP 工具与本地工具走同一权限/hooks/审计；单个 server 挂掉只记状态跳过。
 
 ---
 
 ## 🔧 Vibe coding 继续开发
 
-想要定制自己的 Agent？很简单，跟着下面的步骤来就行。
+### 1. 添加新工具（作者体验不变）
 
-### 1. 先让 AI 熟悉项目
+在 `tools/` 下新建 Python 文件，用 `@tool` 装饰器，返回 JSON 字符串：
 
-开始之前，先告诉你的 coding 工具（比如 Cursor、GitHub Copilot 等）：
-```
--先熟悉当前项目，了解项目结构和核心模块
-```
+```python
+from langchain_core.tools import tool
+from utils.task_context import get_task_id
+from utils.path import ensure_task_dirs
 
-### 2. 更换 Logo 和欢迎语
-
-**换 Logo**：
-```
--将 logo 图片放到 docs/logo图/logo图.png，替换掉原来的就行
-```
-
-**改欢迎语**：
-```
--我现在需要更换项目名称为：
--修改 cli/display.py 中的 print_welcome() 函数，更换欢迎语
--修改 cli/display.py 中的 print_icon() 函数，更换 CLI 图标和 ASCII 艺术字
--修改项目中其他所有涉及 anyclaw 或 AnyClaw 的位置，更改为项目名称
+@tool
+def my_tool(query: str) -> str:
+    """
+    描述：……
+    使用时机：……
+    输入：query（必填）……
+    输出：JSON 字符串，含 ok / result 字段。
+    """
+    task_id = get_task_id()
+    # 文件产出请写入 sandbox/{task_id}（参考 tools/fs.py 的路径护栏）
+    return '{"ok": true, "result": "..."}'
 ```
 
-**需要更换的文件和位置**：
+自动发现注册（`config/tools.yaml` 控制启停），`/tools reload` 或 Web 面板热重载。
+在 `config/permissions.yaml` 给它配权限等级。
 
-1. **`pyproject.toml`**：
-   - `name = "anyclaw"` → `name = "YOUR_PROJECT_NAME"`
-   - `description = "anyclaw：agent框架"` → `description = "YOUR_PROJECT_NAME：agent框架"`
-   - `anyclaw = "cli.main:main"` → `YOUR_COMMAND_NAME = "cli.main:main"`
+### 2. 定制 Agent 人格与行为
 
-2. **`cli/display.py`**：
-   - `print_icon()` 函数中的 ASCII 艺术字和注释（替换 "ANYCLAW" 为 "YOUR_PROJECT_NAME"）
-   - `print_welcome()` 函数中的欢迎语：`"欢迎使用 AnyClaw - Agent智能助手"` → `"欢迎使用 YOUR_PROJECT_NAME - Agent智能助手"`
+- `prompt/system_prompt.txt`：基础 system prompt
+- `IDENTITY.md` / `SOUL.md` / `AGENT.md` / `USER.md` / `MEMORY.md` / `TOOLS.md`：Profile 层（编辑后下一轮即生效）
+- `skills/*.md` + `config/skills.yaml`：技能库（关键词自动激活）
 
-3. **`cli/main.py`**：
-   - 所有 `"AnyClaw"` 的显示文本 → `"YOUR_PROJECT_NAME"`
+### 3. 换 Logo / 名称 / 欢迎语
 
-4. **`cli/interactive.py`**：
-   - 所有 `"AnyClaw"` 的显示文本 → `"YOUR_PROJECT_NAME"`
+- Logo：`docs/logo图/logo图.png`
+- CLI 图标与欢迎语：`cli/display.py` 的 `print_icon()` / `print_welcome()`
+- 项目名：`pyproject.toml`、`cli/main.py`、`web/index.html`、README
 
-5. **`utils/path.py`**：
-   - 注释中的 `"anyclaw 项目所在目录"` → `"YOUR_PROJECT_NAME 项目所在目录"`
+---
 
-6. **`README.md`**：
-   - 项目标题、描述、所有提到 AnyClaw 的地方 → `YOUR_PROJECT_NAME`
-   - GitHub 链接中的用户名和仓库名 → `YOUR_GITHUB_USERNAME/YOUR_REPO_NAME`
-
-### 3. 定制 System prompt
-
-想让你的 Agent 更专业？更幽默？更严谨？直接改 system prompt 就行
-```
--为我修改prompt system：
--设定角色：（如舆情分析助手）
--设定认知：具备React理解 + 专属理解（如舆情分析的方法）
--设定名称或性格：（如平和、热情）
-```
-### 4. 给 Agent 添加新能力（工具）
-
-想让 Agent 能做更多事情？给它加工具就行
-
-**第一步：创建工具文件**
-
-首先，需要在 `tools/` 目录下创建一个新的 Python 文件
-
-```
--在 tools/ 目录下新建一个文件，命名为 （my_tool.py）
-工具用途说明：
-工具时机说明：
-工具逻辑：
-工具输入参数：
-工具输出参数：
--工具函数需要用 @tool 装饰器，返回值必须是 JSON 字符串格式
--输出参数字段需要包含至少其一（如 result、data、output 等）
--如果需要保存文件，必须使用任务ID作为路径，参考demo工具的文件保存处理
--工具内部需要调用 LLM 来分析数据或生成内容，可以根据场景选择合适的模型使用：如使用项目中的（text_generation、element_extraction、code_generation）
-```
-
-**第二步：配置启停（可选）**
-
-AnyClaw 现在支持自动发现工具，不需要再改 `agent/reactagent.py` 或 `tools/__init__.py`。
-
-你只需要在 `config/tools.yaml` 控制启用状态：
-
-```yaml
-auto_discover: true
-search_packages:
-  - tools
-enabled_tools: []
-disabled_tools:
-  - my_tool
-```
-
-说明：
-
-- `enabled_tools` 为空：默认启用全部已发现工具
-- `enabled_tools` 非空：仅启用清单中的工具
-- `disabled_tools`：显式禁用工具（优先级更高）
-
-**第三步：测试工具**
-
-工具添加完成后，写一个测试文件，直接运行查看效果
-
-```
-在scripts中新增一个工具测试文件，用于测试新的工具（如my_tool）
-格式按照run_demo示例一致
-```
-
-你也可以在 CLI 中直接运行：
+## 🧪 测试与 Eval
 
 ```bash
-/tools reload
+# 内核测试（fake model，无需 API key）
+pytest
+
+# Eval 场景（CI 模式 / 真实模型 / 第二 AI 评审）
+python evals/runner.py
+python evals/runner.py --real --judge
 ```
 
-查看新工具是否被发现并启用。
+覆盖：图循环与事件顺序、ask/never 权限与 interrupt/resume、审计去重、
+checkpoint 跨进程恢复、压缩配对、投影 schema、ContextVar 传播、
+路径护栏（.. / 符号链接逃逸）、MCP 加载与容错、Web SSE 与权限流。
 
 ---
 
 ## 📁 项目架构
 
-### 1. 技术栈
-
-- **LangChain 1.0** - Agent 框架、工具系统、流式输出
-- **Rich** - CLI 美化与 Markdown 渲染
-- **Typer** - CLI 框架
-- **PyYAML** - 配置管理
-- **Python 3.10+** - 核心语言
-
-### 2. 目录树
-
 ```
 anyclaw/
-├── agent/              # Agent 核心逻辑
-│   ├── __init__.py
-│   └── reactagent.py  # ReAct Agent 实现
-├── cli/                # 命令行界面
-│   ├── __init__.py
-│   ├── main.py        # 主入口
-│   ├── interactive.py # 交互式运行
-│   ├── display.py     # 显示工具（Rich UI）
-│   ├── session_ui.py  # 会话管理 UI
-│   ├── tools_ui.py    # 工具列表 UI
-│   ├── profile_ui.py  # Profile Layer 状态 UI
-│   ├── skills_ui.py   # Skills Layer 状态 UI
-│   ├── models_ui.py   # 模型列表 UI
-│   └── clear_utils.py # 清除工具
-├── config/             # 配置文件
-│   ├── __init__.py
-│   ├── model.yaml     # 模型配置
-│   ├── prompt.yaml    # Prompt 配置
-│   ├── tools.yaml     # 工具自动发现与启停配置
-│   ├── profile.yaml   # Profile Layer 配置
-│   └── skills.yaml    # Skills Layer 配置
-├── docs/               # 文档和图片
-│   ├── logo图/        # Logo 图片
-│   └── 效果图/        # 功能演示图
-├── memory/             # 会话存储
-│   └── STM/           # 短期记忆（会话数据）
-├── model/              # 模型工厂
-│   ├── __init__.py
-│   └── factory.py     # 模型实例化
-├── prompt/             # Prompt 模板
-│   └── system_prompt.txt
-├── sandbox/            # 任务运行目录
-├── skills/             # 技能文件（Markdown）
-│   ├── planning.md
-│   ├── coding.md
-│   ├── research.md
-│   └── data-analysis.md
-├── tools/              # 工具定义
-│   ├── __init__.py
-│   └── demo_calculator.py  # 示例计算工具
-├── utils/              # 工具函数
-│   ├── __init__.py
-│   ├── session_manager.py  # 会话管理
-│   ├── token_tracker.py    # Token 追踪
-│   ├── env_loader.py        # 环境变量加载
-│   ├── message_utils.py     # 消息工具（压缩、转换等）
-│   ├── path.py              # 路径工具
-│   ├── prompt_loader.py     # Prompt 加载
-│   ├── task_context.py      # 任务上下文管理
-│   ├── tool_registry.py     # 动态工具注册中心
-│   ├── profile_loader.py    # Profile Layer 加载器
-│   ├── long_term_memory.py  # 轻量长期记忆（LTM）
-│   └── skill_registry.py    # 技能注册与自动激活
-├── scripts/            # 脚本文件
-│   └── run_demo_calculator.py  # 工具测试脚本
-├── pyproject.toml      # 项目配置
-├── requirements.txt    # 依赖列表
-├── LICENSE.txt         # 许可证
-├── IDENTITY.md         # Agent 身份设定
-├── USER.md             # 用户偏好与画像
-├── SOUL.md             # 系统目标与约束
-├── AGENT.md            # 决策策略
-├── MEMORY.md           # 记忆策略（STM/LTM）
-├── TOOLS.md            # 工具策略与占位符
-└── README.md           # 项目说明
+├── core/               # headless 内核
+│   ├── events.py       # 统一事件 schema（CLI/Web 共用）
+│   ├── state.py        # AgentState（LangGraph 图状态）
+│   ├── graph.py        # 显式图：context→agent→permission_gate→tools
+│   ├── kernel.py       # AgentKernel facade（astream/resume/投影/LTM）
+│   ├── projection.py   # STM JSON 投影（单写者）
+│   └── harness/        # permissions / hooks / audit
+├── cli/                # CLI 薄渲染器 + 主菜单
+├── server/             # FastAPI 服务端（SSE / 会话 / 状态路由）
+├── web/                # React + Vite 前端控制台
+├── tools/              # @tool 工具（自动发现）：calculator/fs/search/shell
+├── model/              # 模型工厂（多 provider）
+├── utils/              # 会话/记忆/技能/profile/路径护栏/MCP 注册
+├── config/             # model/tools/skills/profile/prompt/kernel/permissions/hooks/mcp
+├── prompt/             # system prompt 文本
+├── skills/             # 技能库（Markdown）
+├── evals/              # 场景化 eval + 第二 AI 评审
+├── tests/              # pytest 内核测试
+├── memory/             # STM 投影 / LTM / checkpoint / 审计（运行时生成）
+├── sandbox/            # 任务沙箱（运行时生成）
+├── IDENTITY.md SOUL.md AGENT.md USER.md MEMORY.md TOOLS.md  # Profile 层
+└── scripts/            # 工具冒烟脚本
 ```
 
 ---
@@ -437,8 +309,6 @@ anyclaw/
 ## 📝 许可证
 
 本项目采用 **NON-COMMERCIAL LEARNING LICENSE 1.1**（非商业学习许可证）。
-
-### 许可证说明
 
 Copyright (c) 2024 relakkes@gmail.com
 
@@ -457,7 +327,7 @@ Copyright (c) 2024 relakkes@gmail.com
 #### 免责声明
 
 1. 软件按"现状"提供，不提供任何明示或暗示的保证，包括但不限于适销性、特定用途适用性和非侵权性的保证
-2. 在任何情况下，版权所有者均不对因使用或无法使用本软件而产生的任何直接、间接、偶然、特殊、示范性或后果性损害承担责任
+2. 在任何情况下，版权所有者均不对因使用本软件或无法使用本软件而产生的任何直接、间接、偶然、特殊、示范性或后果性损害承担责任
 
 #### 完整许可证
 
@@ -470,12 +340,6 @@ Copyright (c) 2024 relakkes@gmail.com
 ## 🤝 贡献
 
 欢迎提交 Issue 和 Pull Request！
-
----
-
-## ⭐ Star History
-
-如果这个项目对你有帮助，请给个 Star ⭐
 
 ---
 

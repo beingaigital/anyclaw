@@ -4,34 +4,48 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "anyclaw"
-version = "0.1.0"
-description = "anyclaw：agent框架"
+version = "0.2.0"
+description = "anyclaw：LangGraph headless 内核 + Harness + CLI/Web 双端的 Agent 开发底座"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
     "python-dotenv>=1.0.0",
     "PyYAML>=6.0",
-    "langchain>=0.3.0",
-    "langchain-core>=0.3.0",
-    "langchain-community>=0.3.0",
-    "langchain-openai>=0.2.0",
-    "langchain-google-genai>=2.0.0",
-    "langgraph>=0.2.0",
-    "dashscope>=1.20.0",
-    "colorama>=0.4.6",
-    "typer>=0.9.0",
     "rich>=13.7.0",
-    "prompt-toolkit>=3.0.43",
+    "langchain>=1.5,<2",
+    "langchain-core>=1.8,<2",
+    "langchain-openai>=1.8,<2",
+    "langgraph>=1.2,<2",
+    "langgraph-checkpoint-sqlite>=3.1,<4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-asyncio>=0.24",
+]
+web = [
+    "fastapi>=0.124",
+    "uvicorn>=0.35",
+]
+gemini = [
+    "langchain-google-genai>=4.5,<5",
+]
+mcp = [
+    "langchain-mcp-adapters>=0.3.2,<0.4",
 ]
 
 [project.scripts]
 anyclaw = "cli.main:main"
 
 [tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
 filterwarnings = [
     "ignore:.*Pydantic V1.*isn't compatible with Python 3.14.*:UserWarning:langchain_core.*",
 ]
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["cli*", "agent*", "config*", "model*", "tools*", "utils*", "mcps*", "prompt*", "skills*", "scripts*"]
+include = ["cli*", "config*", "core*", "model*", "tools*", "utils*", "server*", "hooks*", "prompt*", "skills*", "scripts*"]

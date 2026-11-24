@@ -69,6 +69,34 @@ def _render_module_errors_table(registry) -> None:
     console.print(table)
 
 
+def _render_mcp_section() -> None:
+    """显示 MCP 配置概览（不连接 server；实时状态见 Web 面板）。"""
+    import yaml
+
+    from utils.path import get_config_path
+
+    path = get_config_path("mcp.yaml")
+    if not path.exists():
+        return
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            raw = yaml.safe_load(fh) or {}
+    except Exception:
+        return
+    if not isinstance(raw, dict):
+        return
+    enabled = bool(raw.get("enabled", True))
+    servers = raw.get("servers") if isinstance(raw.get("servers"), dict) else {}
+    console.print()
+    console.print(
+        f"[bold cyan]MCP[/bold cyan]  状态: [white]{'启用' if enabled else '禁用'}[/white]  "
+        f"[dim]配置: {path}[/dim]"
+    )
+    for name, cfg in servers.items():
+        transport = (cfg or {}).get("transport", "?") if isinstance(cfg, dict) else "?"
+        console.print(f"  - [cyan]{name}[/cyan] ({transport})")
+
+
 def show_tools_list(force_reload: bool = False) -> None:
     """显示工具注册中心状态。"""
     registry = get_tool_registry(force_reload=force_reload)
@@ -86,4 +114,5 @@ def show_tools_list(force_reload: bool = False) -> None:
 
     _render_disabled_tools_table(registry)
     _render_module_errors_table(registry)
+    _render_mcp_section()
     console.print()

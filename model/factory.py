@@ -105,36 +105,28 @@ def _create_openai_compatible(
     - 使用 langchain_openai.ChatOpenAI
     - 通过 base_url 指向第三方 OpenAI-compatible endpoint
     """
-    # 流式场景下默认请求返回 usage（通过 model_kwargs 注入，避免触发「非默认参数」warning）
-    model_kwargs = kwargs.get("model_kwargs") if isinstance(kwargs.get("model_kwargs"), dict) else {}
-    if "stream_options" not in model_kwargs and "stream_options" not in kwargs:
-        model_kwargs["stream_options"] = {"include_usage": True}
-    kwargs["model_kwargs"] = model_kwargs
-    # OpenAI 接口要求 stream_options 与 stream 同时显式开启
+    # LangChain 1.x：显式开启 stream_usage（qwen/deepseek/kimi 等自定义 base_url 默认不开）。
+    # 不再手工注入 model_kwargs["stream_options"]——1.x 内部自行构建该 payload，手工注入会冲突。
+    # 代理拒绝 stream_options 时可在 model.yaml 用 kwargs: {stream_usage: false} 关闭。
+    kwargs.setdefault("stream_usage", True)
     kwargs.setdefault("streaming", True)
     try:
         return ChatOpenAI(model=model, api_key=api_key, base_url=base_url, **kwargs)
     except TypeError:
         # 兼容旧参数名
-        if "model_kwargs" in kwargs and isinstance(kwargs["model_kwargs"], dict):
-            kwargs["model_kwargs"].pop("stream_options", None)
         return ChatOpenAI(model=model, openai_api_key=api_key, base_url=base_url, **kwargs)
 
 # 创建openai模型接口
 def _create_openai(model: str, api_key: str, **kwargs: Any) -> Any:
-    # 流式场景下默认请求返回 usage（通过 model_kwargs 注入，避免触发「非默认参数」warning）
-    model_kwargs = kwargs.get("model_kwargs") if isinstance(kwargs.get("model_kwargs"), dict) else {}
-    if "stream_options" not in model_kwargs and "stream_options" not in kwargs:
-        model_kwargs["stream_options"] = {"include_usage": True}
-    kwargs["model_kwargs"] = model_kwargs
-    # OpenAI 接口要求 stream_options 与 stream 同时显式开启
+    # LangChain 1.x：显式开启 stream_usage（qwen/deepseek/kimi 等自定义 base_url 默认不开）。
+    # 不再手工注入 model_kwargs["stream_options"]——1.x 内部自行构建该 payload，手工注入会冲突。
+    # 代理拒绝 stream_options 时可在 model.yaml 用 kwargs: {stream_usage: false} 关闭。
+    kwargs.setdefault("stream_usage", True)
     kwargs.setdefault("streaming", True)
     try:
         return ChatOpenAI(model=model, api_key=api_key, **kwargs)
     except TypeError:
-        # 兼容旧参数名/旧版本：可能不支持 model_kwargs/stream_options
-        if "model_kwargs" in kwargs and isinstance(kwargs["model_kwargs"], dict):
-            kwargs["model_kwargs"].pop("stream_options", None)
+        # 兼容旧参数名
         return ChatOpenAI(model=model, openai_api_key=api_key, **kwargs)
 
 # 创建gemini模型接口

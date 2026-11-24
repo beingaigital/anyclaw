@@ -1,23 +1,17 @@
-# .env 与模型配置
+# 核心依赖（与 pyproject.toml 同步；推荐 pip install -e ".[dev,web,mcp,gemini]"）
 python-dotenv>=1.0.0
 PyYAML>=6.0
-requests>=2.28.0
-
-# LangChain 1.0
-langchain>=0.3.0
-langchain-core>=0.3.0
-langchain-community>=0.3.0
-langchain-openai>=0.2.0
-langchain-google-genai>=2.0.0
-langgraph>=0.2.0
-
-# Qwen / DashScope
-dashscope>=1.20.0
-
-# CLI 颜色支持
-colorama>=0.4.6
-
-# CLI 框架和美化
-typer>=0.9.0
 rich>=13.7.0
-prompt-toolkit>=3.0.43
+
+# LangChain / LangGraph 1.x
+langchain>=1.5,<2
+langchain-core>=1.8,<2
+langchain-openai>=1.8,<2
+langgraph>=1.2,<2
+langgraph-checkpoint-sqlite>=3.1,<4
+
+# 可选 extras（按需安装）：
+#   [dev]   pytest>=8.0  pytest-asyncio>=0.24
+#   [web]   fastapi>=0.124  uvicorn>=0.35
+#   [gemini] langchain-google-genai>=4.5,<5
+#   [mcp]   langchain-mcp-adapters>=0.3.2,<0.4

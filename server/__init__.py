@@ -1,0 +1,1 @@
+"""AnyClaw Web 控制台服务端：FastAPI 包装 AgentKernel，与 CLI 共用事件流。"""

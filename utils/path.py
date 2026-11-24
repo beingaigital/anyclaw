@@ -58,8 +58,19 @@ def get_stm_dir() -> Path:
     return get_memory_dir() / "STM"
 
 
+def get_audit_dir() -> Path:
+    """审计日志目录：项目根/memory/audit（harness 工具决策 JSONL）。"""
+    return get_memory_dir() / "audit"
+
+
+def get_checkpoints_path() -> Path:
+    """LangGraph checkpoint 数据库路径：memory/checkpoints.sqlite（会话真相源）。"""
+    return get_memory_dir() / "checkpoints.sqlite"
+
+
 def ensure_memory_dirs() -> Path:
-    """确保 memory 和 STM 目录存在，返回 STM 目录。"""
+    """确保 memory、STM 和 audit 目录存在，返回 STM 目录。"""
     stm_dir = get_stm_dir()
     stm_dir.mkdir(parents=True, exist_ok=True)
+    get_audit_dir().mkdir(parents=True, exist_ok=True)
     return stm_dir
